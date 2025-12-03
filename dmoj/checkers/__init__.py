@@ -1,14 +1,17 @@
 from typing import Callable, Union
 
 from dmoj.checkers import (
+    allac,
     bridged,
     easy,
+    easyline,
     floats,
     floatsabs,
     floatsrel,
     identical,
     linecount,
     linematches,
+    llm,
     rstripped,
     sorted,
     standard,
