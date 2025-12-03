@@ -68,6 +68,10 @@ class Problem:
         self._batch_counter = 0
         self._testcase_counter = 0
 
+        # Check if this is an IDE submission with custom input
+        self.is_ide_submission = self.meta.get('is_ide', False)
+        self.custom_input = self.meta.get('custom_input', '')
+
         # Cache root dir so that we don't need to scan all roots (potentially very slow on networked mount).
         root_dir = get_problem_root(problem_id)
         assert root_dir is not None
@@ -82,8 +86,12 @@ class Problem:
 
         self.problem_data.archive = self._resolve_archive_files()
 
-        if not self._resolve_test_cases():
-            raise InvalidInitException('No test cases? What am I judging?')
+        # For IDE submissions, create a custom test case with user's input
+        if self.is_ide_submission:
+            self.config['test_cases'] = [{'in': None, 'out': None, 'points': 1, 'output_prefix_length': 25165824}]
+        else:
+            if not self._resolve_test_cases():
+                raise InvalidInitException('No test cases? What am I judging?')
 
     def _match_test_cases(
         self,
@@ -464,6 +472,11 @@ class TestCase(BaseTestCase):
         return result
 
     def _make_input_data_io(self) -> MmapableIO:
+        # For IDE submissions, use custom input from user
+        if self.problem.is_ide_submission:
+            custom_input_bytes = self.problem.custom_input.encode('utf-8') if isinstance(self.problem.custom_input, str) else self.problem.custom_input
+            return MemoryIO(custom_input_bytes, seal=True)
+
         gen = self.config.generator
 
         # don't try running the generator if we specify an output file explicitly,
@@ -482,6 +495,10 @@ class TestCase(BaseTestCase):
             return MemoryIO(seal=True)
 
     def output_data(self) -> bytes:
+        # For IDE submissions, there is no expected output
+        if self.problem.is_ide_submission:
+            return b''
+
         if self.config.out:
             return self._normalize(self.problem.problem_data[self.config.out])
         gen = self.config.generator
@@ -493,6 +510,10 @@ class TestCase(BaseTestCase):
         return b''
 
     def checker(self) -> partial:
+        # For IDE submissions, use allac checker (always accept - just capture output)
+        if self.problem.is_ide_submission:
+            return partial(checkers.allac.check)
+
         try:
             name = self.config['checker'] or 'standard'
             if isinstance(name, ConfigNode):
