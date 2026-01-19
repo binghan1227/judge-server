@@ -210,6 +210,8 @@ class Problem:
 
         if 'custom_judge' in self.config:
             return cast(Type['BaseGrader'], graders.CustomGrader)
+        elif 'harness_grader' in self.config:
+            return graders.HarnessGrader
         elif 'signature_grader' in self.config:
             return graders.SignatureGrader
         elif 'interactive' in self.config:
