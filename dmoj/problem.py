@@ -477,7 +477,7 @@ class TestCase(BaseTestCase):
         # For IDE submissions, use custom input from user
         if self.problem.is_ide_submission:
             custom_input_bytes = self.problem.custom_input.encode('utf-8') if isinstance(self.problem.custom_input, str) else self.problem.custom_input
-            return MemoryIO(custom_input_bytes, seal=True)
+            return MemoryIO(prefill=custom_input_bytes, seal=True)
 
         gen = self.config.generator
 
